@@ -450,7 +450,7 @@ theorem true_and' : ∀ (b : MyBool), (MyBool.true && b) = b := by
 --  proof.
 
 theorem false_or : ∀ (b : MyBool), (MyBool.false || b) = b := by
-  sorry
+  intros b; rfl
 
 --  (End of exercise)
 
@@ -629,11 +629,13 @@ def isRed' (c : Color) : Bool :=
 --  possible day of the week, or you could try to come up with a shorter
 --  solution...
 
-def is_weekend (d : Day) : Bool
-  := sorry
+def is_weekend (d : Day) : Bool :=
+  match d with
+  | Day.saturday | Day.sunday => true
+  | _ => false
 
-theorem is_weekend_test1 : is_weekend Day.sunday = true := sorry
-theorem is_weekend_test2 : is_weekend Day.friday = false := sorry
+theorem is_weekend_test1 : is_weekend Day.sunday = true := by rfl
+theorem is_weekend_test2 : is_weekend Day.friday = false := by rfl
 
 --  ### Exercise (1 star): isInversion ⭐
 
@@ -647,15 +649,19 @@ theorem is_weekend_test2 : is_weekend Day.friday = false := sorry
 --  As before, write the right-hand sides of the `example` blocks to ensure
 --  they pass with no `sorry`.
 
-def isInversion (c1 c2 : Color) : Bool
-  := sorry
+def isInversion (c1 c2 : Color) : Bool :=
+  match (c1, c2) with
+  | (Color.black, Color.white) => true
+  | (Color.white, Color.black) => true
+  | (Color.primary RGB.red, Color.primary RGB.blue) => true
+  | (Color.primary RGB.blue, Color.primary RGB.red) => true
+  | _ => false
 
-theorem isInversion_test1 : isInversion Color.black Color.white = true := sorry
-theorem isInversion_test2 : isInversion Color.white Color.black = Bool.true := sorry
-theorem isInversion_test3 : isInversion (Color.primary RGB.red) (Color.primary RGB.blue) = Bool.true :=
-  sorry
-theorem isInversion_test4 : isInversion (Color.primary RGB.green) (Color.primary RGB.red) = Bool.false :=
-  sorry
+
+theorem isInversion_test1 : isInversion Color.black Color.white = true := by rfl
+theorem isInversion_test2 : isInversion Color.white Color.black = Bool.true := by rfl
+theorem isInversion_test3 : isInversion (Color.primary RGB.red) (Color.primary RGB.blue) = Bool.true := by rfl
+theorem isInversion_test4 : isInversion (Color.primary RGB.green) (Color.primary RGB.red) = Bool.false := by rfl
 
 --  ### Namespaces
 
@@ -855,10 +861,10 @@ sf_expect_failure_in
 --  Predict the output of each of the statements below. Would their results
 --  change depending on which namespace the statements appear in? How?
 
---  #check .black           -- Write your prediction here.
---  #check Color.black      -- Write your prediction here.
---  #check RGB              -- Write your prediction here.
---  #check Playground.myFoo -- Write your prediction here.
+--  #check .black           -- error
+--  #check Color.black      -- Color
+--  #check RGB              -- Type
+--  #check Playground.myFoo -- RGB
 
 --  Once you have written your predictions, copy the lines from the comment
 --  into an active section of the book to evaluate them.
