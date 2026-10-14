@@ -1365,12 +1365,19 @@ theorem four_eq_succ_three : four = succ three := by rfl
 
 theorem one_plus_one_eq_two : one + one = two := by
   rewrite [one_eq_succ_zero]
-  sorry
+  rewrite [add_succ]
+  rewrite [add_zero]
+  rfl
 
 --  Try the same for `two + two = four`.
 
 theorem two_plus_two_eq_four : two + two = four := by
-  sorry
+  rewrite [two_eq_succ_one]
+  rewrite [one_eq_succ_zero]
+  rewrite [add_succ]
+  rewrite [add_succ]
+  rewrite [add_zero]
+  rfl
 
 --  #### Multiplication
 
@@ -1394,10 +1401,12 @@ scoped infixl:70 " * " => mul
 --  helpful as a model.
 
 theorem mul_zero : ∀ n : Nat, n * zero = zero := by
-  sorry
+  intro n
+  rfl
 
 theorem mul_succ : ∀ n m : Nat, n * (succ m) = (n * m) + n := by
-  sorry
+  intro n m
+  rfl
 
 attribute [irreducible] mul
 
@@ -1421,20 +1430,27 @@ theorem zero_add_one : (zero + one : Nat) = one := by
 --  ### Exercise (2 stars): test_mul_add ⭐⭐
 
 theorem one_add_one : (one + one : Nat) = two := by
-  rewrite [one_eq_succ_zero]
-  sorry
+  rewrite [one_eq_succ_zero, add_succ, add_zero]
+  rfl
 
 theorem zero_mul_two : (zero * two : Nat) = zero := by
   rewrite [two_eq_succ_one, one_eq_succ_zero]
-  sorry
+  rewrite [mul_succ, mul_succ, mul_zero]
+  rewrite [add_zero, add_zero]
+  rfl
 
 theorem one_mul_two : (one * two : Nat) = two := by
   rewrite [two_eq_succ_one, one_eq_succ_zero]
-  sorry
+  rewrite [mul_succ, mul_succ, mul_zero]
+  rewrite [add_succ, add_succ, add_zero, add_zero]
+  rfl
 
 theorem two_mul_two : (two * two : Nat) = four := by
   rewrite [two_eq_succ_one, one_eq_succ_zero]
-  sorry
+  rewrite [mul_succ, mul_succ, mul_zero]
+  rewrite [add_succ, add_succ, add_succ, add_succ]
+  rewrite [add_zero, add_zero]
+  rfl
 
 --  #### Equality and Ordering
 
@@ -1489,11 +1505,15 @@ example : ble four two = false := by rfl
 
 --  Define a less-than function in terms of `ble`.
 
-def blt (n m : Nat) : Bool := sorry
+def blt (n m : Nat) : Bool :=
+  match n, m with
+  | _, zero => false
+  | zero, _ => true
+  | succ n', succ m' => blt n' m'
 
-example : blt two two = false := sorry
-example : blt two four = true  := sorry
-theorem blt_test3 : blt four two = false := sorry
+example : blt two two = false := rfl
+example : blt two four = true  := rfl
+theorem blt_test3 : blt four two = false := rfl
 
 attribute [irreducible] blt ble
 
@@ -1566,7 +1586,10 @@ theorem add_id_example : ∀ n m : Nat,
 
 theorem add_id_exercise : ∀ n m o : Nat,
     n = m → m = o → n + m = m + o := by
-  sorry
+  intro n m o
+  intro h1 h2
+  rewrite [h1, h2]
+  rfl
 
 --  #### Displaying Theorem Statements
 
