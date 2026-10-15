@@ -1934,13 +1934,22 @@ end Nat
 theorem identity_fn_applied_twice (f : Bool → Bool) :
     (∀ x : Bool, f x = x) →
     ∀ b : Bool, f (f b) = b := by
-  sorry
+  intro h b
+  rewrite [h, h]
+  rfl
 
 --  ### Exercise (1 star): negation_fn_applied_twice (Manually graded) ⭐
 
 --  Now state and prove a theorem `negation_fn_applied_twice` similar to
 --  the previous one but where the hypothesis says that the function `f`
 --  has the property that `f x = !x`.
+
+theorem negation_fn_applied_twice (f : Bool → Bool) :
+  (∀ x : Bool, f x = !x) →
+  ∀ b : Bool, f (f b) = b := by
+  intro h b
+  rewrite [h, h, Bool.not_not]
+  rfl
 
 --  FILL IN HERE
 
@@ -1949,7 +1958,15 @@ theorem identity_fn_applied_twice (f : Bool → Bool) :
 --  Prove the following theorem.
 
 theorem and_eq_or (b c : Bool) : (b && c) = (b || c) → b = c := by
-  sorry
+  intro h
+  cases c with
+  | true =>
+    rewrite [Bool.and_true, Bool.or_true] at h
+    exact h
+  | false =>
+    rewrite [Bool.and_false, Bool.or_false] at h
+    rewrite [h]
+    rfl
 
 --  ### Airport Exercise
 
@@ -2004,23 +2021,26 @@ inductive Traveler : Type where
 
 --  ### Exercise (1 star): buyTicket ⭐
 
-def buyTicket (t : Traveler) : Traveler := sorry
-theorem buyTicket_test1 : buyTicket (.noTicket .ordinary) = .ticketed .ordinary := sorry
-theorem buyTicket_test2 : buyTicket (.checkedIn .prohibited .blocked) = .checkedIn .prohibited .blocked := sorry
+def buyTicket (t : Traveler) : Traveler :=
+  match t with
+  | .noTicket bc => .ticketed bc
+  | _ => t
+theorem buyTicket_test1 : buyTicket (.noTicket .ordinary) = .ticketed .ordinary := by rfl
+theorem buyTicket_test2 : buyTicket (.checkedIn .prohibited .blocked) = .checkedIn .prohibited .blocked := by rfl
 
 --  (End of exercise)
 
 --  Here are the simplification rules for `buyTicket`:
 
 theorem buyTicket_noTicket (bagContent : BagContent) :
-    buyTicket (.noTicket bagContent) = .ticketed bagContent := sorry
+    buyTicket (.noTicket bagContent) = .ticketed bagContent := by rfl
 
 theorem buyTicket_ticketed (bagContent : BagContent) :
-    buyTicket (.ticketed bagContent) = .ticketed bagContent := sorry
+    buyTicket (.ticketed bagContent) = .ticketed bagContent := by rfl
 
 theorem buyTicket_checkedIn (bagContent : BagContent)
     (screeningStatus : ScreeningStatus) :
-    buyTicket (.checkedIn bagContent screeningStatus) = .checkedIn bagContent screeningStatus := sorry
+    buyTicket (.checkedIn bagContent screeningStatus) = .checkedIn bagContent screeningStatus := by rfl
 
 attribute [irreducible] buyTicket
 
@@ -2032,7 +2052,16 @@ attribute [irreducible] buyTicket
 
 theorem buyTicket_idempotent (t : Traveler) :
     buyTicket (buyTicket t) = buyTicket t := by
-  sorry
+  cases t with
+  | noTicket _ =>
+    rewrite [buyTicket_noTicket, buyTicket_ticketed]
+    rfl
+  | ticketed _ =>
+    rewrite [buyTicket_ticketed, buyTicket_ticketed];
+    rfl
+  | checkedIn _ _ =>
+    rewrite [buyTicket_checkedIn, buyTicket_checkedIn]
+    rfl
 
 --  (End of exercise)
 
@@ -2042,25 +2071,28 @@ theorem buyTicket_idempotent (t : Traveler) :
 
 --  ### Exercise (1 star): checkIn ⭐
 
-def checkIn (t : Traveler) : Traveler := sorry
+def checkIn (t : Traveler) : Traveler :=
+  match t with
+  | .ticketed bc => .checkedIn bc .notScreened
+  | _ => t
 
-theorem checkIn_test1 : checkIn (.noTicket .ordinary) = .noTicket .ordinary := sorry
-theorem checkIn_test2 : checkIn (.ticketed .prohibited) = .checkedIn .prohibited .notScreened := sorry
-theorem checkIn_test3 : checkIn (.checkedIn .ordinary .cleared) = .checkedIn .ordinary .cleared := sorry
+theorem checkIn_test1 : checkIn (.noTicket .ordinary) = .noTicket .ordinary := by rfl
+theorem checkIn_test2 : checkIn (.ticketed .prohibited) = .checkedIn .prohibited .notScreened := by rfl
+theorem checkIn_test3 : checkIn (.checkedIn .ordinary .cleared) = .checkedIn .ordinary .cleared := by rfl
 
 --  (End of exercise)
 
 --  Again, we record one simplification rule for each case:
 
 theorem checkIn_noTicket (bagContent : BagContent) :
-    checkIn (.noTicket bagContent) = .noTicket bagContent := sorry
+    checkIn (.noTicket bagContent) = .noTicket bagContent := by rfl
 
 theorem checkIn_ticketed (bagContent : BagContent) :
-    checkIn (.ticketed bagContent) = .checkedIn bagContent .notScreened := sorry
+    checkIn (.ticketed bagContent) = .checkedIn bagContent .notScreened := by rfl
 
 theorem checkIn_checkedIn (bagContent : BagContent)
     (screeningStatus : ScreeningStatus) :
-    checkIn (.checkedIn bagContent screeningStatus) = .checkedIn bagContent screeningStatus := sorry
+    checkIn (.checkedIn bagContent screeningStatus) = .checkedIn bagContent screeningStatus := by rfl
 
 attribute [irreducible] checkIn
 
@@ -2072,7 +2104,8 @@ attribute [irreducible] checkIn
 
 theorem buyTicket_then_checkIn (bagContent : BagContent) :
     checkIn (buyTicket (.noTicket bagContent)) = .checkedIn bagContent .notScreened := by
-  sorry
+  rewrite [buyTicket_noTicket, checkIn_ticketed]
+  rfl
 
 --  (End of exercise)
 
@@ -2084,27 +2117,31 @@ theorem buyTicket_then_checkIn (bagContent : BagContent) :
 
 --  Define `inspectBag`.
 
-def inspectBag (t : Traveler) : Traveler := sorry
+def inspectBag (t : Traveler) : Traveler :=
+  match t with
+  | .checkedIn .prohibited _ => .checkedIn .prohibited .blocked
+  | .checkedIn .ordinary _ => .checkedIn .ordinary .cleared
+  | _ => t
 
-theorem inspectBag_test1 : inspectBag (.ticketed .prohibited) = .ticketed .prohibited := sorry
-theorem inspectBag_test2 : inspectBag (.checkedIn .ordinary .notScreened) = .checkedIn .ordinary .cleared := sorry
-theorem inspectBag_test3 : inspectBag (.checkedIn .prohibited .notScreened) = .checkedIn .prohibited .blocked := sorry
+theorem inspectBag_test1 : inspectBag (.ticketed .prohibited) = .ticketed .prohibited := by rfl
+theorem inspectBag_test2 : inspectBag (.checkedIn .ordinary .notScreened) = .checkedIn .ordinary .cleared := by rfl
+theorem inspectBag_test3 : inspectBag (.checkedIn .prohibited .notScreened) = .checkedIn .prohibited .blocked := by rfl
 
 --  (End of exercise)
 
 --  Again, we record one characterization lemma for each case.
 
 theorem inspectBag_noTicket (bagContent : BagContent) :
-    inspectBag (.noTicket bagContent) = .noTicket bagContent := sorry
+    inspectBag (.noTicket bagContent) = .noTicket bagContent := by rfl
 
 theorem inspectBag_ticketed (bagContent : BagContent) :
-    inspectBag (.ticketed bagContent) = .ticketed bagContent := sorry
+    inspectBag (.ticketed bagContent) = .ticketed bagContent := by rfl
 
 theorem inspectBag_ordinary (screeningStatus : ScreeningStatus) :
-    inspectBag (.checkedIn .ordinary screeningStatus) = .checkedIn .ordinary .cleared := sorry
+    inspectBag (.checkedIn .ordinary screeningStatus) = .checkedIn .ordinary .cleared := by rfl
 
 theorem inspectBag_prohibited (screeningStatus : ScreeningStatus) :
-    inspectBag (.checkedIn .prohibited screeningStatus) = .checkedIn .prohibited .blocked := sorry
+    inspectBag (.checkedIn .prohibited screeningStatus) = .checkedIn .prohibited .blocked := by rfl
 
 attribute [irreducible] inspectBag
 
@@ -2114,7 +2151,21 @@ attribute [irreducible] inspectBag
 --  effect as inspecting it once.
 
 theorem inspectBag_idempotent (t : Traveler) : inspectBag (inspectBag t) = inspectBag t := by
-  sorry
+  cases t with
+  | noTicket _ =>
+    rewrite [inspectBag_noTicket, inspectBag_noTicket]
+    rfl
+  | ticketed _ =>
+    rewrite [inspectBag_ticketed, inspectBag_ticketed]
+    rfl
+  | checkedIn bc _ =>
+    cases bc with
+    | ordinary =>
+      rewrite [inspectBag_ordinary, inspectBag_ordinary]
+      rfl
+    | prohibited =>
+      rewrite [inspectBag_prohibited, inspectBag_prohibited]
+      rfl
 
 --  (End of exercise)
 
@@ -2127,25 +2178,29 @@ theorem inspectBag_idempotent (t : Traveler) : inspectBag (inspectBag t) = inspe
 
 --  Define `changeBag`.
 
-def changeBag (newContent : BagContent) (t : Traveler) : Traveler := sorry
+def changeBag (newContent : BagContent) (t : Traveler) : Traveler :=
+  match t with
+  | .noTicket _ => .noTicket newContent
+  | .ticketed _ => .ticketed newContent
+  | .checkedIn _ _ => .checkedIn newContent .notScreened
 
-theorem changeBag_test1 : changeBag .prohibited (.ticketed .ordinary) = .ticketed .prohibited := sorry
-theorem changeBag_test2 : changeBag .prohibited (.checkedIn .ordinary .cleared) = .checkedIn .prohibited .notScreened := sorry
+theorem changeBag_test1 : changeBag .prohibited (.ticketed .ordinary) = .ticketed .prohibited := by rfl
+theorem changeBag_test2 : changeBag .prohibited (.checkedIn .ordinary .cleared) = .checkedIn .prohibited .notScreened := by rfl
 
 --  (End of exercise)
 
 --  As before, we record one simplification rule for each case.
 
 theorem changeBag_noTicket (newContent oldContent : BagContent) :
-    changeBag newContent (.noTicket oldContent) = .noTicket newContent := sorry
+    changeBag newContent (.noTicket oldContent) = .noTicket newContent := by rfl
 
 theorem changeBag_ticketed (newContent oldContent : BagContent) :
-    changeBag newContent (.ticketed oldContent) = .ticketed newContent := sorry
+    changeBag newContent (.ticketed oldContent) = .ticketed newContent := by rfl
 
 theorem changeBag_checkedIn (newContent oldContent : BagContent)
     (screeningStatus : ScreeningStatus) :
     changeBag newContent (.checkedIn oldContent screeningStatus) =
-    .checkedIn newContent .notScreened := sorry
+    .checkedIn newContent .notScreened := by rfl
 
 attribute [irreducible] changeBag
 
@@ -2165,13 +2220,17 @@ theorem inspectBag_changeBag_comm_noTicket
     (oldContent newContent : BagContent) :
     inspectBag (changeBag newContent (.noTicket oldContent)) =
     changeBag newContent (inspectBag (.noTicket oldContent)) := by
-  sorry
+    rewrite [changeBag_noTicket, inspectBag_noTicket]
+    rewrite [inspectBag_noTicket, changeBag_noTicket]
+    rfl
 
 theorem inspectBag_changeBag_comm_ticketed
     (oldContent newContent : BagContent) :
     inspectBag (changeBag newContent (.ticketed oldContent)) =
     changeBag newContent (inspectBag (.ticketed oldContent)) := by
-  sorry
+  rewrite [changeBag_ticketed, inspectBag_ticketed]
+  rewrite [inspectBag_ticketed, changeBag_ticketed]
+  rfl
 
 --  (End of exercise)
 
