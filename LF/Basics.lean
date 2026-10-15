@@ -1768,13 +1768,25 @@ theorem and3_exchange (b c d : Bool) :
 
 theorem or_false_true (b : Bool) (h : (b || false) = true) :
   b = true := by
-  sorry
+  cases b with
+  | true =>
+    rewrite [Bool.true_or] at h
+    exact h
+  | false =>
+    rewrite [Bool.false_or] at h
+    exact h
 
 --  ### Exercise (1 star): zero_neb_add_one ⭐
 
 theorem zero_neb_add_one (n : Nat) :
   (zero == (succ zero + n)) = false := by
-  sorry
+  cases n with
+  | zero =>
+    rewrite [add_zero, zero_beq_succ]
+    rfl
+  | succ n' =>
+    rewrite [add_succ, zero_beq_succ]
+    rfl
 
 --  ### Structural Recursion (Optional)
 
@@ -1810,6 +1822,11 @@ def even' (n : Nat) : Bool :=
 --  a way to write a sensible recursive definition (of a simple function on
 --  numbers, say) that does actually terminate on all inputs, but that Lean
 --  will reject because it cannot automatically prove termination.
+
+-- def my_collatz (n : Nat) : Nat :=
+--   match even n with
+--   | true => zero
+--   | false => my_collatz (add (mul 3 n) 1)
 
 --  ### Binary Numerals
 
@@ -1848,31 +1865,51 @@ inductive Bin : Type where
 attribute [pp_nodot] Bin.b1 Bin.b0
 --  END DETAILS
 
-def incr (m : Bin) : Bin
-  := sorry
+def incr (m : Bin) : Bin :=
+  match m with
+  | .z => .b1 .z
+  | .b0 n => .b1 n
+  | .b1 n => .b0 (incr n)
 
-def binToNat (m : Bin) : Nat
-  := sorry
+def binToNat (m : Bin) : Nat :=
+  match m with
+  | .z => zero
+  | .b0 n => (binToNat n) * two
+  | .b1 n => (binToNat n) * two + one
 
-theorem incr_test1 : incr (.b1 .z) = .b0 (.b1 .z) := sorry
-theorem incr_test2 : incr (.b0 (.b1 .z)) = .b1 (.b1 .z) := sorry
-theorem incr_test3 : incr (.b1 (.b1 .z)) = .b0 (.b0 (.b1 .z)) := sorry
+theorem incr_test1 : incr (.b1 .z) = .b0 (.b1 .z) := by rfl
+theorem incr_test2 : incr (.b0 (.b1 .z)) = .b1 (.b1 .z) := by rfl
+theorem incr_test3 : incr (.b1 (.b1 .z)) = .b0 (.b0 (.b1 .z)) := by rfl
 
-theorem incr_z : incr .z = .b1 .z := sorry
-theorem incr_b0 (m : Bin) : incr (.b0 m) = .b1 m := sorry
-theorem incr_b1 (m : Bin) : incr (.b1 m) = .b0 (incr m) := sorry
+theorem incr_z : incr .z = .b1 .z := by rfl
+theorem incr_b0 (m : Bin) : incr (.b0 m) = .b1 m := by rfl
+theorem incr_b1 (m : Bin) : incr (.b1 m) = .b0 (incr m) := by rfl
 
-theorem binToNat_z : binToNat .z = zero := sorry
-theorem binToNat_b0 (m : Bin) : binToNat (.b0 m) = binToNat m * two := sorry
-theorem binToNat_b1 (m : Bin) : binToNat (.b1 m) = binToNat m * two + one := sorry
+theorem binToNat_z : binToNat .z = zero := by rfl
+theorem binToNat_b0 (m : Bin) : binToNat (.b0 m) = binToNat m * two := by rfl
+theorem binToNat_b1 (m : Bin) : binToNat (.b1 m) = binToNat m * two + one := by rfl
 
 --  You may find your previous proofs of `zero_add_one`, `one_add_one`,
 --  `zero_mul_two`, `one_mul_two`, and `two_mul_two` useful here.
 
-example : binToNat (.b0 (.b1 .z)) = two := sorry
-theorem binToNat_test1 : binToNat (incr (.b1 .z)) = add one (binToNat (.b1 .z)) := sorry
-theorem binToNat_test2 : binToNat (incr (incr (.b1 .z))) = add two (binToNat (.b1 .z)) := sorry
-theorem binToNat_test3 : binToNat (.b0 (.b0 (.b1 .z))) = four := sorry
+example : binToNat (.b0 (.b1 .z)) = two := by
+  rewrite [binToNat_b0, binToNat_b1, binToNat_z]
+  rewrite [zero_mul_two, zero_add_one, one_mul_two]
+  rfl
+theorem binToNat_test1 : binToNat (incr (.b1 .z)) = add one (binToNat (.b1 .z)) := by
+  rewrite [incr_b1, incr_z]
+  rewrite [binToNat_b0, binToNat_b1, binToNat_z]
+  rewrite [zero_mul_two, zero_add_one, one_mul_two, one_add_one]
+  rfl
+theorem binToNat_test2 : binToNat (incr (incr (.b1 .z))) = add two (binToNat (.b1 .z)) := by
+  rewrite [incr_b1, incr_z, incr_b0]
+  rewrite [binToNat_b1, binToNat_b1, binToNat_z]
+  rewrite [zero_mul_two, zero_add_one, one_mul_two]
+  rfl
+theorem binToNat_test3 : binToNat (.b0 (.b0 (.b1 .z))) = four := by
+  rewrite [binToNat_b0, binToNat_b0, binToNat_b1, binToNat_z]
+  rewrite [zero_mul_two, zero_add_one, one_mul_two, two_mul_two]
+  rfl
 
 attribute [irreducible] incr binToNat
 
