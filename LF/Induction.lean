@@ -179,7 +179,13 @@ sf_recall statement add_succ : ∀ n m : Nat, n + (succ m) = succ (n + m)
 --  from Basics:
 
 theorem succ_eq_add_one (n : Nat) : succ n = n + one := by
-  sorry
+  cases n with
+  | zero =>
+    rewrite [zero_add_one, one_eq_succ_zero]
+    rfl
+  | succ n' =>
+    rewrite [one_eq_succ_zero, add_succ, add_zero]
+    rfl
 
 --  ## Proof by Induction
 
@@ -317,19 +323,43 @@ theorem beq_self (n : Nat) : (n == n) = true := by
 
 theorem zero_mul (n : Nat) :
     zero * n = zero := by
-  sorry
+  induction n with
+  | zero =>
+    rewrite [mul_zero]
+    rfl
+  | succ n' ih =>
+    rewrite [mul_succ, add_zero]
+    exact ih
 
 theorem succ_add (n m : Nat) :
     (succ n) + m = succ (n + m) := by
-  sorry
+  induction m with
+  | zero =>
+    rewrite [add_zero, add_zero]
+    rfl
+  | succ m' ih =>
+    rewrite [add_succ, ih, add_succ]
+    rfl
 
 theorem add_comm (n m : Nat) :
     n + m = m + n := by
-  sorry
+  induction m with
+  | zero =>
+    rewrite [add_zero, zero_add]
+    rfl
+  | succ m' ih =>
+    rewrite [add_succ, ih, succ_add]
+    rfl
 
 theorem add_assoc (n m p : Nat) :
     n + (m + p) = (n + m) + p := by
-  sorry
+  induction p with
+  | zero =>
+    rewrite [add_zero, add_zero]
+    rfl
+  | succ p' ih =>
+    rewrite [add_succ, add_succ, ih, add_succ]
+    rfl
 
 --  ### Tip: The `rw` Tactic
 
@@ -381,7 +411,11 @@ attribute [irreducible] double
 --  instead of `rewrite`.
 
 theorem double_add (n : Nat) : double n = n + n := by
-  sorry
+  induction n with
+  | zero =>
+    rw [add_zero, double_zero]
+  | succ n' ih =>
+    rw [double_succ, ih, add_succ, succ_add]
 
 --  ## Proofs Within Proofs
 
