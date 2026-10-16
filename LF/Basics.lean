@@ -1513,7 +1513,7 @@ def blt (n m : Nat) : Bool :=
 
 example : blt two two = false := rfl
 example : blt two four = true  := rfl
-theorem blt_test3 : blt four two = false := rfl
+example : blt four two = false := rfl
 
 attribute [irreducible] blt ble
 
