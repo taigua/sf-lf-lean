@@ -878,20 +878,25 @@ inductive Bin : Type where
 --  definitions of `incr` and `binToNat`, below, with your solution from
 --  Basics, so that this file can be graded on its own.
 
-def incr (m : Bin) : Bin
-  := sorry
+def incr (m : Bin) : Bin :=
+  match m with
+  | .z => .b1 .z
+  | .b0 n => .b1 n
+  | .b1 n => .b0 (incr n)
 
-theorem incr_z : incr .z = .b1 .z := sorry
-theorem incr_b0 m : incr (.b0 m) = .b1 m := sorry
-theorem incr_b1 m : incr (.b1 m) = .b0 (incr m) := sorry
+theorem incr_z : incr .z = .b1 .z := by rfl
+theorem incr_b0 m : incr (.b0 m) = .b1 m := by rfl
+theorem incr_b1 m : incr (.b1 m) = .b0 (incr m) := by rfl
 
-def binToNat (m : Bin) : Nat
-  := sorry
+def binToNat (m : Bin) : Nat :=
+  match m with
+  | .z => zero
+  | .b0 n => (binToNat n) * two
+  | .b1 n => (binToNat n) * two + one
 
-theorem binToNat_z : binToNat .z = zero := sorry
-theorem binToNat_b0 m : binToNat (.b0 m) = mul (binToNat m) two := sorry
-theorem binToNat_b1 m : binToNat (.b1 m) = add (mul (binToNat m) two) one := sorry
-
+theorem binToNat_z : binToNat .z = zero := by rfl
+theorem binToNat_b0 m : binToNat (.b0 m) = mul (binToNat m) two := by rfl
+theorem binToNat_b1 m : binToNat (.b1 m) = add (mul (binToNat m) two) one := by rfl
 --  THE FOLLOWING DETAILS CAN BE SKIPPED
 attribute [pp_nodot] Bin.b0 Bin.b1
 --  END DETAILS
@@ -920,16 +925,26 @@ attribute [pp_nodot] Bin.b0 Bin.b1
 
 theorem bin_to_nat_pres_incr (b : Bin) :
     binToNat (incr b) = (binToNat b) + one := by
-  sorry
+  induction b with
+  | z => rw [incr_z, binToNat_b1, binToNat_z, zero_mul]
+  | b0 n => rw [incr_b0, binToNat_b1, binToNat_b0]
+  | b1 n ih =>
+    rw [incr_b1, binToNat_b1, binToNat_b0, ih]
+    rw [right_distrib, one_mul_two, ← add_assoc, one_add_one]
 
 --  ### Exercise (3 stars): nat_bin_nat ⭐⭐⭐
 
 --  Write a function to convert natural numbers to binary numbers. Also
 --  write some simplification lemmas for it.
 
-def natToBin (n : Nat) : Bin := sorry
+def natToBin (n : Nat) : Bin :=
+  match n with
+  | zero => .z
+  | succ n' => incr (natToBin n')
 
 --  FILL IN HERE
+theorem natToBin_zero : natToBin zero = .z := by rfl
+theorem natToBin_succ : natToBin (succ n) = incr (natToBin n) := by rfl
 
 --  Prove that, if we start with any `Nat`, convert it to `Bin`, and
 --  convert it back, we get the `Nat` that we started with.
@@ -943,7 +958,11 @@ def natToBin (n : Nat) : Bin := sorry
 
 theorem nat_bin_nat (n : Nat) :
     binToNat (natToBin n) = n := by
-  sorry
+  induction n with
+  | zero => rw [natToBin_zero, binToNat_z]
+  | succ n' ih =>
+    rw [natToBin_succ, bin_to_nat_pres_incr, ih]
+    rw [one_eq_succ_zero, add_one, add_zero]
 
 --  ## Bin to Nat and Back (Advanced)
 
