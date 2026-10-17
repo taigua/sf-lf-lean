@@ -734,7 +734,7 @@ theorem mul_one (p : Nat) :
   induction p with
   | zero => rw [mul_zero]
   | succ p' ih =>
-    rw [mul_succ, ih, one_eq_succ_zero, add_succ, add_zero]
+    rw [mul_succ, ih, succ_eq_add_one]
 
 --  (End of exercise)
 
@@ -962,7 +962,7 @@ theorem nat_bin_nat (n : Nat) :
   | zero => rw [natToBin_zero, binToNat_z]
   | succ n' ih =>
     rw [natToBin_succ, bin_to_nat_pres_incr, ih]
-    rw [one_eq_succ_zero, add_one, add_zero]
+    rw [succ_eq_add_one]
 
 --  ## Bin to Nat and Back (Advanced)
 
@@ -984,25 +984,45 @@ sf_expect_failure_in
 
 theorem double_incr (n : Nat) :
     double (succ n) = (double n) + two := by
-  sorry
+  induction n with
+  | zero =>
+    rw [double_succ, double_zero, zero_add]
+    rw [two_eq_succ_one, one_eq_succ_zero]
+  | succ n' ih =>
+    rw [double_succ, ih, two_eq_succ_one]
+    rw [add_succ, ← succ_eq_add_one]
+    rw [add_succ, ← succ_eq_add_one]
 
 --  Now define a similar doubling function for `Bin`.
 
-def doubleBin (b : Bin) : Bin := sorry
+def doubleBin (b : Bin) : Bin :=
+  match b with
+  | .z => .z
+  | n => .b0 n
 
 --  Fill in the characterizing lemmas for this definition below:
-
---  FILL IN HERE
+theorem doubleBin_z : doubleBin .z = .z := by rfl
+theorem doubleBin_b0: doubleBin (.b0 n) = .b0 (.b0 n) := by rfl
+theorem doubleBin_b1: doubleBin (.b1 n) = .b0 (.b1 n) := by rfl
 
 --  Check that your function correctly doubles zero.
 
-theorem double_bin_zero : doubleBin .z = .z := sorry
+theorem double_bin_zero : doubleBin .z = .z := by rw [doubleBin_z]
 
 --  Prove this lemma, which corresponds to `double_incr`.
 
 theorem double_incr_bin (b : Bin) :
     doubleBin (incr b) = incr (incr (doubleBin b)) := by
-  sorry
+  cases b with
+  | z =>
+    rw [incr_z, doubleBin_b1, doubleBin_z]
+    rw [incr_z, incr_b1, incr_z]
+  | b0 n =>
+    rw [incr_b0, doubleBin_b1, doubleBin_b0]
+    rw [incr_b0, incr_b1, incr_b0]
+  | b1 n =>
+    rw [incr_b1, doubleBin_b0, doubleBin_b1]
+    rw [incr_b0, incr_b1, incr_b1]
 
 --  (End of exercise)
 
@@ -1037,17 +1057,25 @@ sf_expect_failure_in
 --  the `Bin` and *only* processes each bit once. Do not try to "look
 --  ahead" at future bits, as this will complicate the proof.
 
-def normalize (b : Bin) : Bin := sorry
+def normalize (b : Bin) : Bin :=
+  match b with
+  | .z => .z
+  | .b0 n => doubleBin (normalize n)
+  | .b1 n => incr (doubleBin (normalize n))
 
 --  Also specify the characterizing lemmas for this definition:
-
---  FILL IN HERE
+theorem normalize_z : normalize .z = .z := by rfl
+theorem normalize_b0 : normalize (.b0 n) = doubleBin (normalize n) := by rfl
+theorem normalize_b1 : normalize (.b1 n) = incr (doubleBin (normalize n)) := by rfl
 
 --  Next, it would be a good idea to do some `example` proofs to check that
 --  your definition of `normalize` works the way you intend before you
 --  proceed. They won't be graded, but do fill in a few below.
 
---  FILL IN HERE
+example : normalize (.b0 .z) = .z := by rfl
+example : normalize (.b1 .z) = .b1 .z := by rfl
+example : normalize (.b1 (.b0 .z)) = .b1 .z := by rfl
+example : normalize (.b0 (.b1 (.b0 (.b0 .z)))) = .b0 (.b1 .z) := by rfl
 
 --  Now that we have defined all of our functions and their characterizing
 --  lemmas, we mark the definitions irreducible as usual. From here on,
@@ -1068,7 +1096,22 @@ attribute [irreducible] normalize doubleBin natToBin incr binToNat
 
 theorem bin_nat_bin (b : Bin) :
     natToBin (binToNat b) = normalize b := by
-  sorry
+  have h (n : Nat) : natToBin (n * two) = doubleBin (natToBin n) := by
+    induction n with
+    | zero => rw [zero_mul, natToBin_zero, doubleBin_z]
+    | succ n' ih =>
+      rw [mul_comm, mul_two, add_succ, succ_add]
+      rw [← mul_two, mul_comm]
+      rw [natToBin_succ, natToBin_succ, natToBin_succ]
+      rw [ih, double_incr_bin]
+  induction b with
+  | z => rw [binToNat_z, natToBin_zero, normalize_z]
+  | b0 b' ih =>
+    rw [binToNat_b0, normalize_b0, h, ih]
+  | b1 b' ih =>
+    rw [binToNat_b1, normalize_b1]
+    rw [← succ_eq_add_one]
+    rw [natToBin_succ, h, ih]
 
 --  (End of exercise)
 
