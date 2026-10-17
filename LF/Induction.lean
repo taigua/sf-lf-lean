@@ -583,9 +583,38 @@ theorem add_assoc'' (n m p : Nat) :
 
 --  Translate your solution for `add_comm` into an informal proof:
 --
---  Theorem: Addition is commutative.
+--  *Theorem*: For any `n` and `m`,
 --
---  Proof: ...
+--      n + m = m + n
+--
+--  *Proof*: By induction on `m`.
+--  - First, suppose `m = zero`. We must show that
+--
+--      n + zero = zero + n.
+--
+--  This follows directly from the definition of `+` (since `x + zero = x` for any `x`).
+--
+--  - Next, suppose `m = m' + 1` (i.e., `m = succ m'`), where
+--
+--      n + m' = m' + n.
+--
+--  We must now show that
+--
+--     n + (m' + 1) = (m' + 1) + n.
+--
+--  By definition of `+`, left side rewrites (via `add_succ`) to
+--
+--      (n + m') + 1 = (m' + 1) + n.
+--
+--  Left side rewrites (via induction hypothesis `n + m' = m' + n`) to
+--
+--      (m' + n) + 1 = (m' + 1) + n.
+--
+--  Right side rewrites (via `succ_add`) to
+--
+--      (m' + n) + 1 = (m' + n) + 1
+--
+--  Which are equal by the induction hypothesis. QED.
 
 --  ### Exercise (2 stars): beq_refl_informal (Optional, Manually graded) ⭐⭐
 
@@ -593,9 +622,29 @@ theorem add_assoc'' (n m p : Nat) :
 --  proof of `add_assoc` as a model. Don't just paraphrase the Lean tactics
 --  into English!
 --
---  Theorem: `(n == n) = true` for any `n`.
+--  *Theorem*: `(n == n) = true` for any `n`.
 --
---  Proof:
+--  *Proof*: By induction on `n`.
+--
+--  - First, suppose `n = zero`. We must show that
+--
+--      (zero == zero) = true.
+--
+--  Obviously `zero` equals to `zero`.
+--
+--  - Next, suppose `n = n' + 1` (i.e., `n = succ n`), where
+--
+--      (n' == n') = true.
+--
+--  We must show that
+--
+--      (succ n' == succ n') = true.
+--
+--  In order to show `(succ n' == succ n') = true)`, we must show that
+--
+--      (n' == n') = true.
+--
+--  Which is true by the induction hypothesis. QED.
 
 --  ## Aside: Using Code Actions to Generate Match Skeletons
 
@@ -682,7 +731,10 @@ theorem add_comm' (n m : Nat) : n + m = m + n := by
 
 theorem mul_one (p : Nat) :
     one * p = p := by
-  sorry
+  induction p with
+  | zero => rw [mul_zero]
+  | succ p' ih =>
+    rw [mul_succ, ih, one_eq_succ_zero, add_succ, add_zero]
 
 --  (End of exercise)
 
@@ -695,7 +747,12 @@ theorem mul_one (p : Nat) :
 
 theorem mul_two (p : Nat) :
     two * p = p + p := by
-  sorry
+  induction p with
+  | zero => rw [mul_zero, add_zero]
+  | succ p' ih =>
+    rw [mul_succ, add_succ, succ_add]
+    rw [succ_eq_add_one, succ_eq_add_one]
+    rw [← add_assoc, one_add_one, ih]
 
 --  ### Exercise (3 stars): mul_comm ⭐⭐⭐
 
@@ -703,17 +760,23 @@ theorem mul_two (p : Nat) :
 --  `add_shuffle3`. You don't need to use induction.
 
 theorem add_shuffle3 (n m p : Nat) : n + m + p = n + p + m := by
-  sorry
+  rw [← add_assoc, add_comm m p, add_assoc]
 
 theorem succ_mul (m n : Nat) :
     (succ n) * m = (n * m) + m := by
-  sorry
+  induction m with
+  | zero => rw [mul_zero, mul_zero, add_zero]
+  | succ m' ih =>
+    rw [mul_succ, mul_succ]
+    rw [ih, add_succ, add_succ, add_shuffle3]
 
 --  Now prove commutativity of multiplication.
 
 theorem mul_comm (m n : Nat) :
     m * n = n * m := by
-  sorry
+  induction n with
+  | zero => rw [mul_zero, zero_mul]
+  | succ n' ih => rw [mul_succ, succ_mul, ih]
 
 --  ### Exercise (3 stars): more_exercises (Optional) ⭐⭐⭐
 
@@ -726,27 +789,45 @@ theorem mul_comm (m n : Nat) :
 
 theorem ble_refl (n : Nat) :
     Nat.ble n n = true := by
-  sorry
+  induction n with
+  | zero => rw [zero_ble]
+  | succ n ih => rw[succ_ble_succ, ih]
 
 theorem andb_false (b : Bool) :
     (b && false) = false := by
-  sorry
+  rw [Bool.and_false]
 
 theorem all3_spec (b c : Bool) :
     ((b && c) || ((!b) || (!c))) = true := by
-  sorry
+  cases b with
+  | false => rfl
+  | true =>
+    cases c with
+    | false => rfl
+    | true => rfl
 
 theorem right_distrib (n m p : Nat) :
     (n + m) * p = (n * p) + (m * p) := by
-  sorry
+  induction p with
+  | zero => rw [mul_zero, mul_zero, mul_zero, add_zero]
+  | succ p' ih =>
+    rw [mul_succ, mul_succ, mul_succ, ih]
+    rw [add_assoc (n * p' + m * p'),
+        add_shuffle3 (n * p') (m * p'),
+        add_assoc]
 
 theorem left_distrib (n m p : Nat) :
     p * (n + m) = (p * n) + (p * m) := by
-  sorry
+  rw [mul_comm p, mul_comm p, mul_comm p]
+  rw [right_distrib]
 
 theorem mul_assoc (n m p : Nat) :
     n * (m * p) = (n * m) * p := by
-  sorry
+  induction p with
+  | zero => rw [mul_zero, mul_zero, mul_zero]
+  | succ p' ih =>
+    rw [mul_succ, mul_succ]
+    rw [left_distrib, ih]
 
 --  ## A New Tactic Combinator: `<;>`
 
