@@ -145,11 +145,12 @@ sf_expect_failure_in
 
 theorem mul_three (n : Nat) :
     3 * n = n + n + n := by
-  sorry
+  rw [Nat.add_one_mul, ← Nat.mul_two, Nat.mul_comm]
 
 theorem mul_three_beq (n : Nat) :
     (3 * n == n + n + n) = true := by
-  sorry
+  rw [Nat.add_one_mul, ← Nat.mul_two, Nat.mul_comm]
+  rw [Nat.beq_eq_true_eq]
 
 --  ## Structuring Proofs with `calc`
 
