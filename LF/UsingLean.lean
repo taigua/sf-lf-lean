@@ -217,7 +217,12 @@ theorem succ_mul_succ (n m : Nat) :
 
 theorem succ_mul_succ' (n m : Nat) :
     (n + 1) * (m + 1) = n * m + n + m + 1 := by
-  sorry
+  calc (n + 1) * (m + 1)
+    _ = n * (m + 1) + 1 * (m + 1) := by rw [Nat.add_mul]
+    _ = n * (m + 1) + (m + 1) := by rw [Nat.one_mul]
+    _ = n * m + n * 1 + (m + 1) := by rw [Nat.mul_add]
+    _ = n * m + n + (m + 1) := by rw [Nat.mul_one]
+    _ = n * m + n + m + 1 := by rw [← Nat.add_assoc]
 
 --  (End of exercise)
 
@@ -301,7 +306,7 @@ example (n : Nat) : addThrice n = n + addTwice n := by
 --  as appropriate.
 
 theorem rwUnfold (n m : Nat) (h : m = n) : addThrice m = n + (n + n) := by
-  sorry
+  rw [addThrice, h, Nat.add_assoc]
 
 --  (End of exercise)
 
@@ -479,8 +484,10 @@ example (n : Nat) : Nat.double (n + 0) = Nat.double n := by
 
 theorem Nat.even_succ (n : Nat) :
     (n + 1).even = !(n.even) := by
-  sorry
-
+  induction n with
+  | zero => rfl
+  | succ n' ih =>
+    rw [even, ih, Bool.not_not]
 --  (End of exercise)
 
 --  We reprove here for Lean's `Nat` some theorems about `Nat.even` and
@@ -494,12 +501,19 @@ theorem Nat.double_succ (n : Nat) : (n + 1).double = n.double + 2 := by rfl
 --  ### Exercise (2 stars): double_add ⭐⭐
 
 theorem Nat.double_add (n : Nat) : n.double = n + n := by
-  sorry
+  induction n with
+  | zero => rw [double_zero, Nat.add_zero]
+  | succ n' ih =>
+    rw [double_succ, ih, ← Nat.add_assoc]
+    rw [Nat.add_comm (n' + 1), ← Nat.add_assoc]
 
 --  ### Exercise (2 stars): double_mul ⭐⭐
 
 theorem Nat.double_mul (n : Nat) : n.double = 2 * n := by
-  sorry
+  induction n with
+  | zero => rw [double_zero, Nat.mul_zero]
+  | succ n' ih =>
+    rw [double_succ, Nat.mul_add, ih, Nat.add_one]
 
 --  (End of exercise)
 
