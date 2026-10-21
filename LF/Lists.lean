@@ -978,59 +978,93 @@ theorem length_append (l₁ l₂ : NatList) :
 
 theorem append_nil (l : NatList) :
     l ++ [] = l := by
-  sorry
+  induction l with
+  | nil => rfl
+  | cons n l' ih =>
+    rw [cons_append, ih]
 
 theorem reverse_append (l₁ l₂ : NatList) :
    (l₁ ++ l₂).reverse = l₂.reverse ++ l₁.reverse := by
-  sorry
+  induction l₁ with
+  | nil => rw [nil_append, reverse_nil, append_nil]
+  | cons n l' ih =>
+    rw [cons_append, reverse_cons, reverse_cons]
+    rw [← append_assoc, ih]
 
 --  An *involution* is a function that is its own inverse. That is,
 --  applying the function twice yields the original input.
 
 theorem reverse_involutive (l : NatList) :
     l.reverse.reverse = l := by
-  sorry
+  induction l with
+  | nil => rw [reverse_nil, reverse_nil]
+  | cons n l' ih =>
+    rw [reverse_cons, reverse_append, ih]
+    rw [reverse_cons, reverse_nil, nil_append]
+    rw [cons_append, nil_append]
 
 --  There is a short solution to the next one. If you find yourself getting
 --  tangled up, step back and try to look for a simpler way.
 
 theorem append_assoc4 (l₁ l₂ l₃ l4 : NatList) :
     l₁ ++ (l₂ ++ (l₃ ++ l4)) = ((l₁ ++ l₂) ++ l₃) ++ l4 := by
-  sorry
+  rw [append_assoc, append_assoc]
 
 --  An exercise about your implementation of `nonZeros`:
 
 theorem nonZeros_append (l₁ l₂ : NatList) :
     nonZeros (l₁ ++ l₂) = (nonZeros l₁) ++ (nonZeros l₂) := by
-  sorry
+  have nonZeros_cons (n : Nat) (l : NatList) :
+    (n :: l).nonZeros = [n].nonZeros ++ l.nonZeros := by
+    cases n with
+    | zero =>
+      rw [nonZeros_cons_zero, nonZeros_cons_zero]
+      rw [nonZeros_nil, nil_append]
+    | succ n' =>
+      rw [nonZeros_cons_nonZero, nonZeros_cons_nonZero]
+      rw [nonZeros_nil, cons_append, nil_append]
+  induction l₁ with
+  | nil => rw [nil_append, nonZeros_nil, nil_append]
+  | cons n l₁' ih =>
+    rw [cons_append, nonZeros_cons]
+    rw [nonZeros_cons n l₁', ih, append_assoc]
 
 --  ### Exercise (2 stars): beq ⭐⭐
 
 --  Fill in the definition of `beq`, which compares lists of numbers for
 --  equality. Prove that `beq l l` yields `true` for every list `l`.
 
-def beq (l₁ l₂ : NatList) : Bool := sorry
+def beq (l₁ l₂ : NatList) : Bool :=
+  match l₁, l₂ with
+  | [], [] => true
+  | [], _ => false
+  | _, [] => false
+  | n₁::l₁', n₂::l₂' =>
+    bif n₁ == n₂ then beq l₁' l₂' else false
 
-theorem beq_nil : beq [] [] = true := sorry
+theorem beq_nil : beq [] [] = true := by rfl
 
 theorem beq_cons_same (h₁ h₂ : Nat) (t₁ t₂ : NatList)
   (h : (h₁ == h₂) = true) :
     beq (h₁ :: t₁) (h₂ :: t₂) = beq t₁ t₂ := by
-  sorry
+  rw [beq, Bool.cond_pos h]
 
 theorem beq_cons_diff (h₁ h₂ : Nat) (t₁ t₂ : NatList)
   (h : (h₁ == h₂) = false) :
     beq (h₁ :: t₁) (h₂ :: t₂) = false := by
-  sorry
+  rw [beq, Bool.cond_neg h]
 
-example : beq [] [] = true := sorry
-example : beq [1, 2, 3] [1, 2, 3] = true := sorry
-example : beq [1, 2, 3] [1, 2, 4] = false := by
-  sorry
+example : beq [] [] = true := by rfl
+example : beq [1, 2, 3] [1, 2, 3] = true := by rfl
+example : beq [1, 2, 3] [1, 2, 4] = false := by rfl
 
 theorem beq_refl (l : NatList) :
     beq l l = true := by
-  sorry
+  induction l with
+  | nil => rfl
+  | cons n l' ih =>
+    rw [beq, Bool.cond_pos, ih]
+    rw [Nat.beq_eq_true_eq]
 
 --  ### List Exercises, Part 2
 
@@ -1043,7 +1077,8 @@ open NatList
 
 theorem count_member_nonZero (l : NatList) :
     Nat.ble 1 (count 1 (1 :: l)) = true := by
-  sorry
+  rw [count_cons_same]
+  rfl; rfl
 
 --  (End of exercise)
 
@@ -1060,13 +1095,36 @@ theorem ble_self_succ (n : Nat) :
 
 theorem remove_does_not_increase_count (l : NatList) :
     Nat.ble (count 0 (removeOne 0 l)) (count 0 l) = true := by
-  sorry
+  induction l with
+  | nil => rfl
+  | cons n l' ih =>
+    cases n with
+    | zero =>
+      rw [removeOne_cons_same _ _ _ rfl, count_cons_same _ _ _ rfl]
+      rw [ble_self_succ]
+    | succ n' =>
+      rw [removeOne_cons_diff _ _ _ rfl, count_cons_diff _ _ _ rfl]
+      rw [count_cons_diff _ _ _ rfl, ih]
 
 --  ### Exercise (3 stars): count_append (Optional, Manually graded) ⭐⭐⭐
 
 --  Write down an interesting theorem `count_append` about lists involving
 --  the functions `count` and `append`, and prove it. (You may find that
 --  the difficulty of the proof depends on how you defined `count`!)
+
+theorem count_append (l₁ l₂ :NatList) (n : Nat) :
+    count n (l₁ ++ l₂) = count n l₁ + count n l₂ := by
+  induction l₁ with
+  | nil => rw [nil_append, count_nil, Nat.zero_add]
+  | cons n' l₁' ih =>
+    rw [cons_append]
+    cases h : (n == n') with
+    | false =>
+      rw [count_cons_diff _ _ _ h, count_cons_diff _ _ _ h]
+      exact ih
+    | true =>
+      rw [count_cons_same _ _ _ h, count_cons_same _ _ _ h]
+      rw [Nat.succ_add, ih]
 
 --  ### Exercise (3 stars): involutive_injective (Advanced) ⭐⭐⭐
 
@@ -1079,7 +1137,8 @@ theorem remove_does_not_increase_count (l : NatList) :
 theorem involutive_injective (f : Nat → Nat)
   (hInv : ∀ n : Nat, n = f (f n)) :
     (∀ n₁ n₂ : Nat, f n₁ = f n₂ → n₁ = n₂) := by
-  sorry
+  intros n₁ n₂ h
+  rw [hInv n₁, hInv n₂, h]
 
 --  ### Exercise (2 stars): reverse_injective (Advanced) ⭐⭐
 
@@ -1090,7 +1149,7 @@ theorem involutive_injective (f : Nat → Nat)
 
 theorem reverse_injective (l₁ l₂ : NatList)
     (h : l₁.reverse = l₂.reverse) : l₁ = l₂ := by
-  sorry
+  rw [← reverse_involutive l₁, ← reverse_involutive l₂, h]
 
 --  ## Options
 
@@ -1152,11 +1211,14 @@ theorem NatOption.elim_some (d₁ d₂ : Nat) : elim d₁ (.some d₂) = d₂ :=
 --  Using the same idea, fix the `head` function from earlier so we don't
 --  have to pass a default element for the `nil` case.
 
-def head? (l : NatList) : NatOption := sorry
+def head? (l : NatList) : NatOption :=
+  match l with
+  | .nil => .none
+  | .cons h _ => .some h
 
-example : head? [] = .none := sorry
-theorem test_head?1 : head? [1] = .some 1 := sorry
-theorem test_head?2 : head? [5, 6] = .some 5 := sorry
+example : head? [] = .none := by rfl
+theorem test_head?1 : head? [1] = .some 1 := by rfl
+theorem test_head?2 : head? [5, 6] = .some 5 := by rfl
 
 --  ### Exercise (1 star): option_elim_head? (Optional) ⭐
 
@@ -1164,7 +1226,10 @@ theorem test_head?2 : head? [5, 6] = .some 5 := sorry
 
 theorem option_elim_head? (l : NatList) (default : Nat) :
     head default l = NatOption.elim default (head? l) := by
-  sorry
+  cases l with
+  | nil => rw [head_nil, head?, NatOption.elim_none]
+  | cons h t =>
+    rw [head, head?, NatOption.elim_some]
 
 --  (End of exercise)
 
@@ -1194,7 +1259,7 @@ def MyId.beq (x₁ x₂ : MyId) : Bool :=
 --  ### Exercise (1 star): MyId.beq_refl ⭐
 
 theorem MyId.beq_refl (x : MyId) : MyId.beq x x = true := by
-  sorry
+  rw [beq, Nat.beq_eq_true_eq]
 
 --  (End of exercise)
 
@@ -1243,6 +1308,8 @@ def find (x : MyId) (d : PartialMap) : NatOption :=
 
 --  (A) True (B) False (C) Not sure
 
+--  Answer: (A)
+
 --   ----------------------------------------
 
 --  _Quiz:_
@@ -1256,19 +1323,22 @@ def find (x : MyId) (d : PartialMap) : NatOption :=
 
 --  (A) True (B) False (C) Not sure
 
+--  Answer: (A)
+
 --   ----------------------------------------
 
 --  ### Exercise (1 star): update_eq ⭐
 
 theorem update_eq (d : PartialMap) (x : MyId) (n : Nat) :
     find x (update d x n) = .some n := by
-  sorry
+  rw [update, find, MyId.beq_refl, Bool.cond_true]
 
 --  ### Exercise (1 star): update_neq ⭐
 
 theorem update_neq (d : PartialMap) (x y : MyId) (o : Nat) :
     MyId.beq x y = false → find x (update d y o) = find x d := by
-  sorry
+  intro h
+  rw [update, find, h, Bool.cond_false]
 
 --  (End of exercise)
 
