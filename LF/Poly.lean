@@ -149,6 +149,8 @@ example : replicate Bool false 1 = .cons false .nil := by rfl
 --  (D) `MyList (Nat × Bool)`
 --
 --  (E) Ill-typed
+--
+--  Answer: (E)
 
 --   ----------------------------------------
 
@@ -163,6 +165,8 @@ example : replicate Bool false 1 = .cons false .nil := by rfl
 --  (C) `(α : Type) → {β : Type} → α → Nat → MyList β`
 --
 --  (D) Ill-typed
+--
+--  Answer: (B)
 
 --   ----------------------------------------
 
@@ -177,6 +181,8 @@ example : replicate Bool false 1 = .cons false .nil := by rfl
 --  (C) `MyList Bool`
 --
 --  (D) Ill-typed
+--
+--  Answer: (D)
 
 --   ----------------------------------------
 
@@ -276,6 +282,8 @@ def myNil' := @List.nil Nat
 --  (C) `Bool`
 --
 --  (D) No type can be assigned
+--
+--  Answer: (A)
 
 --   ----------------------------------------
 
@@ -292,6 +300,8 @@ def myNil' := @List.nil Nat
 --  (C) `Bool`
 --
 --  (D) No type can be assigned
+--
+--  Answer: (A)
 
 --   ----------------------------------------
 
@@ -308,6 +318,8 @@ def myNil' := @List.nil Nat
 --  (C) `Bool`
 --
 --  (D) No type can be assigned
+--
+--  Answer: (B)
 
 --   ----------------------------------------
 
@@ -324,6 +336,8 @@ def myNil' := @List.nil Nat
 --  (C) `List Bool`
 --
 --  (D) No type can be assigned
+--
+--  Answer: (D)
 
 --   ----------------------------------------
 
@@ -340,6 +354,8 @@ def myNil' := @List.nil Nat
 --  (C) `List Bool`
 --
 --  (D) No type can be assigned
+--
+--  Answer: (B)
 
 --   ----------------------------------------
 
@@ -356,6 +372,8 @@ def myNil' := @List.nil Nat
 --  (C) `List Bool`
 --
 --  (D) No type can be assigned
+--
+--  Answer: (B)
 
 --   ----------------------------------------
 
@@ -372,6 +390,8 @@ def myNil' := @List.nil Nat
 --  (C) `List Bool`
 --
 --  (D) No type can be assigned
+--
+--  Answer: (C)
 
 --   ----------------------------------------
 
@@ -390,13 +410,13 @@ inductive Grumble (α : Type) : Type where
 
 --  Which of the following are well-typed elements of `Grumble α` for some
 --  type `α`? (Add YES or NO to each line.)
---  - `Grumble.d (Mumble.b Mumble.a 5)`
---  - `@Grumble.d Mumble (Mumble.b Mumble.a 5)`
---  - `@Grumble.d Bool (Mumble.b Mumble.a 5)`
---  - `@Grumble.e Bool true`
---  - `@Grumble.e Mumble (Mumble.b Mumble.c 0)`
---  - `@Grumble.e Bool (Mumble.b Mumble.c 0)`
---  - `Mumble.c`
+--  - `Grumble.d (Mumble.b Mumble.a 5)`          YES
+--  - `@Grumble.d Mumble (Mumble.b Mumble.a 5)`  YES
+--  - `@Grumble.d Bool (Mumble.b Mumble.a 5)`    YES
+--  - `@Grumble.e Bool true`                     YES
+--  - `@Grumble.e Mumble (Mumble.b Mumble.c 0)`  YES
+--  - `@Grumble.e Bool (Mumble.b Mumble.c 0)`    NO
+--  - `Mumble.c`                                 YES
 
 --  #### Exercises
 
@@ -428,15 +448,26 @@ theorem rev_cons {α : Type} {x : α} {l : List α} :
 
 theorem append_nil {α : Type} {l : List α} :
     l ++ [] = l := by
-  sorry
+  induction l with
+  | nil => rfl
+  | cons head tail ih =>
+    rw [List.cons_append, ih]
 
 theorem append_assoc {α : Type} {l₁ l₂ l₃ : List α} :
     l₁ ++ l₂ ++ l₃ = l₁ ++ (l₂ ++ l₃) := by
-  sorry
+  induction l₁ with
+  | nil => rfl
+  | cons head tail ih =>
+    rw [List.cons_append, List.cons_append]
+    rw [ih, List.cons_append]
 
 theorem append_length {α : Type} {l₁ l₂ : List α} :
     (l₁ ++ l₂).length = l₁.length + l₂.length := by
-  sorry
+  induction l₁ with
+  | nil => rw [List.nil_append, List.length_nil, Nat.zero_add]
+  | cons head tail ih =>
+    rw [List.cons_append, List.length_cons, List.length_cons]
+    rw [ih, Nat.add_right_comm]
 
 --  ### Exercise (2 stars): more_poly_exercises ⭐⭐
 
@@ -444,11 +475,19 @@ theorem append_length {α : Type} {l₁ l₂ : List α} :
 
 theorem reverse_append {α : Type} {l₁ l₂ : List α} :
     (l₁ ++ l₂).rev = l₂.rev ++ l₁.rev := by
-  sorry
+  induction l₁ with
+  | nil => rw [List.nil_append, rev_nil, append_nil]
+  | cons head tail ih =>
+    rw [List.cons_append, rev_cons, rev_cons]
+    rw [← append_assoc, ih]
 
 theorem reverse_reverse {α : Type} (l : List α) :
     l.rev.rev = l := by
-  sorry
+  induction l with
+  | nil => rfl
+  | cons head tail ih =>
+    rw [rev_cons, reverse_append, ih]
+    rfl
 
 --  ### Polymorphic Pairs
 
@@ -526,11 +565,15 @@ theorem zip_cons_cons {α β : Type} {x : α} {y : β} {l₁ : List α} {l₂ : 
 --  answers in Lean:
 --  - What is the type of `zip` (i.e., what does `#check @zip` print?)
 --
+--  Answer: {α β : Type} → List α → List β → List (α × β)
+--
 --  - What does
 --
 --    `#eval zip [1, 2] [false, false, true, true]`
 --
 --    print?
+--
+--  Answer: [(1, false), (2, false)]
 
 --  ### Exercise (3 stars): unzip (Manually graded) ⭐⭐⭐
 
@@ -544,16 +587,21 @@ theorem zip_cons_cons {α β : Type} {x : α} {y : β} {l₁ : List α} {l₂ : 
 --  you can use `dsimp only` to simplify expressions accessing the `fst` or
 --  `snd` elements of a pair.
 
-def unzip {α : Type} {β : Type} (l : List (α × β)) : List α × List β := sorry
+def unzip {α : Type} {β : Type} (l : List (α × β)) : List α × List β :=
+  match l with
+  | [] => ([], [])
+  | (a, b) :: tail =>
+    let res := unzip tail
+    (a::res.1, b::res.2)
 
 theorem unzip_test1 : unzip [(1, false), (2, true)] = ([1, 2], [false, true]) := by
-  sorry
+  rfl
 
 theorem unzip_test_fst : (unzip [(1, false), (2, true)]).fst = [1, 2] := by
-  sorry
+  rfl
 
 theorem unzip_test_snd : (unzip [(1, false), (2, true)]).snd = [false, true] := by
-  sorry
+  rfl
 
 --  ### Polymorphic Options
 
@@ -599,16 +647,19 @@ example : nth? [true] 2 = none := by rfl
 --  function from the last chapter. Be sure that it passes the unit tests
 --  below.
 
-def head? {α : Type} (l : List α) : Option α := sorry
+def head? {α : Type} (l : List α) : Option α :=
+  match l with
+  | [] => none
+  | head :: _ => some head
 
-theorem head?_nil {α : Type} : head? ([] : List α) = none := sorry
+theorem head?_nil {α : Type} : head? ([] : List α) = none := by rfl
 
 theorem head?_cons {α : Type} {head : α} {tail : List α} : head? (head :: tail) = some head :=
-  sorry
+  by rfl
 
-theorem test_head?1 : head? [1, 2] = some 1 := sorry
+theorem test_head?1 : head? [1, 2] = some 1 := by rfl
 
-theorem test_head?2 : head? [[1], [2]] = some [1] := sorry
+theorem test_head?2 : head? [[1], [2]] = some [1] := by rfl
 
 --  ## Functions as Data
 
