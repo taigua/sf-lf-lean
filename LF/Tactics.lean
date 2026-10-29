@@ -117,7 +117,10 @@ theorem injection_ex3 {α : Type} (x y z : α) (l j : List α)
     (h₁ : x :: y :: l = z :: j)
     (h₂ : j = z :: l) :
     x = y := by
-  sorry
+  injections h₃ h₄
+  have : z :: l = y :: l := by rw [h₄, h₂]
+  injections h₅
+  rw [h₃, h₅]
 
 --  ### Disjointness
 
