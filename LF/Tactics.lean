@@ -190,7 +190,7 @@ example (n : Nat)
 theorem disjoint_ex3 {α : Type} (x y z : α) (l : List α)
     (h : x :: y :: l = []) :
     x = z := by
-  sorry
+  contradiction
 
 --  ### Quizzes
 
@@ -230,6 +230,8 @@ sf_recall
 --  `y = x`.
 --
 --  (4) None of the above.
+--
+--  Anaser: (3)
 
 --   ----------------------------------------
 
@@ -252,6 +254,8 @@ sf_recall
 --  (C) Hypothesis `h` becomes `hxy : x = y`.
 --
 --  (D) None of the above.
+--
+--  Answer: (B)
 
 --   ----------------------------------------
 
@@ -274,6 +278,8 @@ sf_recall
 --  (C) Hypothesis `h` becomes `hxy : x = y`.
 --
 --  (D) None of the above.
+--
+--  Answer: (C)
 
 --   ----------------------------------------
 
@@ -296,6 +302,8 @@ sf_recall
 --  (C) Hypothesis `h` becomes `hxy : x = y`.
 --
 --  (D) None of the above.
+--
+--  Answer: (C)
 
 --   ----------------------------------------
 
