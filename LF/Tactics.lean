@@ -422,7 +422,12 @@ theorem chooseIf_self {α : Type} (test : α → Bool) (x : α) :
 --  Recall the `unzip` function from chapter Poly; copy your implementation
 --  from that chapter and paste it below:
 
-def unzip' {α β : Type} (l : List (α × β)) : List α × List β := sorry
+def unzip' {α β : Type} (l : List (α × β)) : List α × List β :=
+  match l with
+  | [] => ([], [])
+  | (x, y) :: tail =>
+    let ⟨xs, ys⟩ := unzip' tail
+    (x::xs, y::ys)
 
 --  Prove that `unzip'` and `zip` are inverses in the following sense.
 --  Remember that you can use `dsimp only` to simplify expressions
@@ -432,7 +437,17 @@ theorem zip_unzip' {α β : Type} (l : List (α × β))
     (l₁ : List α) (l₂ : List β)
     (h : unzip' l = (l₁, l₂)) :
     zip l₁ l₂ = l := by
-  sorry
+  induction l generalizing l₁ l₂ with
+  | nil =>
+    rw [unzip'] at h
+    injections h₁ h₂
+    rw [← h₁, ← h₂, zip]
+  | cons x xs ih =>
+    let ⟨a, b⟩ := x
+    rw [unzip'] at h
+    injections h₁ h₂
+    rw [← h₁, ← h₂, zip, ih]
+    dsimp only
 
 --  ### Splitting with Equations
 
