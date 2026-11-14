@@ -515,7 +515,25 @@ theorem keepIf_some {α : Type} (test : α → Bool) (x y : α)
 
 theorem bool_fn_iterate_three_eq_one (f : Bool → Bool) (b : Bool) :
     f (f (f b)) = f b := by
-  sorry
+  cases b with
+  | true =>
+    cases h₁ : f true with
+    | true =>
+      rw [h₁, h₁]
+    | false =>
+      cases h₂ : f false with
+      | true => rw [h₁]
+      | false => rw [h₂]
+  | false =>
+    cases h₁ : f true with
+    | true =>
+      cases h₂ : f false with
+      | true => rw [h₁, h₁]
+      | false => rw [h₂, h₂]
+    | false =>
+      cases h₂ : f false with
+      | true => rw [h₁, h₂]
+      | false => rw [h₂, h₂]
 
 --  ## The `apply` Tactic
 
@@ -571,7 +589,9 @@ theorem apply_exercise (m : Nat)
     (h₂ : ∀ (n : Nat), n.even = false → n.odd = true)
     (hEven : m.even = true) :
     (m + 1).odd = true := by
-  sorry
+  apply h₂
+  apply h₁
+  exact hEven
 
 --  (End of exercise)
 
@@ -596,12 +616,55 @@ example (n m : Nat) (h : n = 0 → n = m) (hn : n = 0) : m = n := by
 
 theorem rev_exercise1 {α : Type} (l l' : List α) (h : l = l'.rev) :
     l' = l.rev := by
-  sorry
+  rw [h]
+  symm
+  apply reverse_reverse
 
 --  ### Exercise (1 star): apply_rewrite (Optional, Manually graded) ⭐
 
 --  Briefly explain the difference between the tactics `apply` and `rw`.
 --  What are the situations where both can usefully be applied?
+
+/-
+- **`apply`** is *backward reasoning*. If the goal is `⊢ T` and we have a
+lemma/expression `h : A → B → T`, then `apply h` changes the goal to the
+premises `A` and `B`. It does not replace subterms; it uses a lemma whose
+conclusion matches the goal.
+
+- **`rw`** is *rewriting/substitution*. If `h : a = b` (or an iff `P ↔ Q` in propositions),
+then `rw [h]` replaces occurrences of `a` by `b` in the goal, or with `rw [h] at h'` in a
+hypothesis. Use `rw [← h]` for the reverse direction. It does not do backward implication
+reasoning; it performs equational/iff replacement.
+
+Example of the same equality goal handled both ways:
+
+```lean
+example (a b c : Nat) (h₁ : a = c) (h₂ : c = b) : a = b := by
+  rw [h₁]
+  exact h₂
+```
+
+or:
+
+```lean
+example (a b c : Nat) (h₁ : a = c) (h₂ : c = b) : a = b := by
+  apply Eq.trans h₁
+  exact h₂
+```
+
+Both are useful together when rewriting puts the goal into a shape where an implication
+lemma applies, or when `apply` leaves an equality subgoal that can be closed by rewriting. For example:
+
+```lean
+example (P : Nat → Prop) (h : ∀ x, x = 0 → P x) (hn : n = 0) : P n := by
+  rw [hn]      -- goal becomes P 0
+  apply h      -- goal becomes 0 = 0
+  rfl
+```
+
+So: use **`apply`** to reduce a goal to the premises of a lemma; use **`rw`** to substitute equal/iff subterms.
+Use both when a proof needs both backward chaining and equational simplification.
+-/
 
 --  ### Supplying arguments to `apply`
 
@@ -750,7 +813,9 @@ theorem trans_eq_exercise (n m o p : Nat)
     (h₁ : m = o.minusTwo)
     (h₂ : (n + p) = m) :
     (n + p) = o.minusTwo := by
-  sorry
+  calc n + p
+  _ = m := by rw [h₂]
+  _ = o.minusTwo := by rw [h₁]
 
 --  ### Forward Reasoning with `apply`
 
