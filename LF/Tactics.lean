@@ -914,7 +914,12 @@ example (m : Nat) (h : ∀ n, m * n = 0) : m = 0 := by
 
 theorem nth?_always_none {l : List α} (h : ∀ i, nth? l i = none) :
     l = [] := by
-  sorry
+  cases l with
+  | nil => rfl
+  | _ =>
+    specialize h 0
+    rw [nth?_cons_zero] at h
+    contradiction
 
 --  (End of exercise)
 
@@ -1132,13 +1137,120 @@ theorem double_injective (n m : Nat) (h : n.double = m.double) : n = m := by
 theorem add_self_injective (n m : Nat)
     (h : n + n = m + m) :
     n = m := by
-  sorry
+  induction n generalizing m with
+  | zero =>
+    cases m with
+    | zero => rfl
+    | _ => rw [Nat.add_zero] at h; contradiction
+  | succ _ ih =>
+    cases m with
+    | zero =>
+      rw [Nat.add_zero, Nat.add_zero 0] at h
+      contradiction
+    | succ m' =>
+      congr
+      apply ih
+      rw [Nat.add_succ, Nat.add_succ (m' + 1)] at h
+      injection h with h
+      rw [Nat.add_comm, Nat.add_comm (m' + 1)] at h
+      injection h
 
 --  ### Exercise (2 stars): add_self_injective_informal (Manually graded) ⭐⭐
 
 --  Give a careful informal proof of `add_self_injective`, stating the
 --  induction hypothesis explicitly and being as explicit as possible about
 --  quantifiers, everywhere.
+
+/-
+Let S(x) denote x + 1. We prove the statement
+
+∀n, m ∈ ℕ, n + n = m + m ⇒ n = m
+
+by induction on n, generalizing m. Thus the induction motive is
+
+P(n) = ∀m ∈ ℕ, n + n = m + m ⇒ n = m.
+
+**Base case: n = 0**
+
+We must prove P(0), i.e.
+
+∀m ∈ ℕ, 0 + 0 = m + m ⇒ 0 = m.
+
+Let m ∈ ℕ be arbitrary, and assume
+
+0 + 0 = m + m.
+
+Since 0 + 0 = 0, this gives 0 = m + m.
+
+Now consider cases on m.
+
+- If m = 0, then 0 = m, as required.
+- If m = S(k) for some k ∈ ℕ, then
+
+  m + m = S(k) + S(k) = S(S(k+k)),
+
+  which is a successor, hence cannot equal 0. This contradicts 0 = m + m.
+
+So P(0) holds.
+
+**Inductive step**
+
+Fix n ∈ ℕ, and assume the induction hypothesis
+
+IH: ∀m ∈ ℕ, n + n = m + m ⇒ n = m.
+
+We must prove P(S(n)), namely
+
+∀m ∈ ℕ, S(n) + S(n) = m + m ⇒ S(n) = m.
+
+Let m ∈ ℕ be arbitrary, and assume
+
+h: S(n) + S(n) = m + m.
+
+We consider cases on m.
+
+- If m = 0, then
+
+  S(n) + S(n) = 0 + 0 = 0,
+
+  but S(n) + S(n) = S(S(n+n)), a successor, so it cannot equal 0. Contradiction.
+
+- If m = S(k) for some k ∈ ℕ, then
+
+  h: S(n) + S(n) = S(k) + S(k).
+
+  Now compute:
+
+  S(n) + S(n) = S(S(n+n)),
+
+  and
+
+  S(k) + S(k) = S(S(k+k)).
+
+  Hence
+
+  S(S(n+n)) = S(S(k+k)).
+
+  Since the successor function is injective, applying injectivity twice gives
+
+  n + n = k + k.
+
+  Now instantiate the induction hypothesis IH with m := k.
+  Since n + n = k + k, we obtain
+
+  n = k.
+
+  Therefore
+
+  S(n) = S(k) = m.
+
+
+Thus P(S(n)) holds. By induction, P(n) holds for every n ∈ ℕ. Therefore
+
+∀n, m ∈ ℕ, n + n = m + m ⇒ n = m.
+
+That proves `add_self_injective`.
+-/
 
 --  ## Rewriting with Conditional Statements
 
@@ -1248,7 +1360,13 @@ example (n m p q : Nat)
 theorem nth?_after_last {α : Type}
     {n : Nat} {l : List α} (h : l.length = n) :
     nth? l n = none := by
-  sorry
+  induction l generalizing n with
+  | nil => rfl
+  | cons _ _ ih =>
+    rw [List.length_cons] at h
+    rw [← h, nth?_cons_succ]
+    apply ih
+    rfl
 
 --  ### Exercise (3 stars): length_append_cons (Optional) ⭐⭐⭐
 
@@ -1257,7 +1375,12 @@ theorem nth?_after_last {α : Type}
 theorem length_append_cons {α : Type} {l₁ l₂ : List α} {x : α} {n : Nat}
     (h : (l₁ ++ (x :: l₂)).length = n) :
     ((l₁ ++ l₂).length) + 1 = n := by
-  sorry
+  induction l₁ generalizing n with
+  | nil => assumption
+  | cons _ _ ih =>
+    rw [List.cons_append, List.length_cons] at *
+    rw [ih rfl]
+    assumption
 
 --  ### Exercise (3 stars): length_append_self (Optional) ⭐⭐⭐
 
@@ -1267,7 +1390,15 @@ theorem length_append_cons {α : Type} {l₁ l₂ : List α} {x : α} {n : Nat}
 theorem length_append_self {α : Type} {n : Nat} {l : List α}
     (h : l.length = n) :
     (l ++ l).length = n + n := by
-  sorry
+  induction l generalizing n with
+  | nil =>
+    rw [List.append_nil, List.length_nil] at *
+    rw [← h]
+  | cons _ _ ih =>
+    rw [List.cons_append, List.length_cons] at *
+    rw [← length_append_cons rfl]
+    rw [ih rfl, ← h]
+    rw [Nat.add_add_add_comm]
 
 --  ### Exercise (3 stars): list_ext ⭐⭐⭐
 
@@ -1287,14 +1418,27 @@ theorem diagonal_induction (p : Nat → Nat → Prop)
     (hzs : ∀ n, p 0 n → p 0 (n + 1))
     (hss : ∀ m n, p m n → p (m + 1) (n + 1)) :
     ∀ m n, p m n := by
-  sorry
+  intro m n
+  induction m generalizing n with
+  | zero =>
+    induction n with
+    | zero => exact hzz
+    | succ _ ih => apply hzs; apply ih
+  | succ _ ih =>
+    induction n with
+    | zero => apply hsz; apply ih
+    | _ => apply hss; apply ih
 
 --  ### Exercise (2 stars): append_left_cancel ⭐⭐
 
 theorem append_left_cancel {α : Type} (l₁ l₂ l₃ : List α)
     (h : l₁ ++ l₂ = l₁ ++ l₃) :
     l₂ = l₃ := by
-  sorry
+  induction l₁ with
+  | nil => assumption
+  | cons _ _ ih =>
+    apply ih
+    injection h
 
 --  ### Exercise (3 stars): map_injective_of_injective ⭐⭐⭐
 
@@ -1314,7 +1458,18 @@ theorem map_injective_of_injective {α β : Type}
     (l₁ l₂ : List α)
     (h : map f l₁ = map f l₂) :
     l₁ = l₂ := by
-  sorry
+  induction l₁ generalizing l₂ with
+  | nil =>
+    cases l₂ with
+    | nil => rfl
+    | _ => rw [map_cons, map_nil] at h; contradiction
+  | cons x _ ih =>
+    cases l₂ with
+    | nil => rw [map_cons, map_nil] at h; contradiction
+    | cons y ys =>
+      rw [map_cons, map_cons] at h
+      injection h with hxy hxs
+      rw [hf x y hxy, ih ys hxs]
 
 --  ### Exercise (3 stars): unzip'_zip (Advanced, Manually graded) ⭐⭐⭐
 
@@ -1332,6 +1487,24 @@ theorem map_injective_of_injective {α β : Type}
 --  possibly drop some list elements.
 
 --  FILL IN HERE
+theorem unzip'_zip {α β : Type}
+    {l₁ : List α} {l₂ : List β}
+    (h : l₁.length = l₂.length) :
+    unzip' (zip l₁ l₂) = (l₁, l₂) := by
+  induction l₁ generalizing l₂ with
+  | nil =>
+    cases l₂ with
+    | nil => rfl
+    | cons => contradiction
+  | cons x xs ih =>
+    cases l₂ with
+    | nil => contradiction
+    | cons y ys =>
+      rw [zip_cons_cons]
+      dsimp [unzip']
+      rewrite [ih]
+      · rfl
+      · injections
 
 --  ### Exercise (3 stars): test_pos_of_filter_cons (Advanced) ⭐⭐⭐
 
@@ -1339,7 +1512,19 @@ theorem test_pos_of_filter_cons {α : Type}
     (test : α → Bool) (x : α) (l l' : List α)
     (h : filter test l = x :: l') :
     test x = true := by
-  sorry
+  induction l generalizing x l' test with
+  | nil => contradiction
+  | cons y ys ih =>
+    rw [filter] at h
+    cases hy : (test y)
+    · rw [hy] at h
+      rw [Bool.cond_false] at h
+      exact ih _ _ _ h
+    · rw [hy] at h
+      rw [Bool.cond_true] at h
+      injections h1 h2
+      rw [← h1]
+      exact hy
 
 --  ### Exercise (4 stars): forall_exists_challenge (Advanced) ⭐⭐⭐⭐
 
@@ -1348,32 +1533,45 @@ theorem test_pos_of_filter_cons {α : Type}
 --  The first checks whether the given Boolean test returns `true` for
 --  every element of the list.
 
-def allTrue {α : Type} (test : α → Bool) (l : List α) : Bool := sorry
+def allTrue {α : Type} (test : α → Bool) (l : List α) : Bool :=
+  match l with
+  | [] => true
+  | x::xs => test x && allTrue test xs
 
-example : allTrue Nat.odd [1, 3, 5, 7, 9] = true := sorry
-example : allTrue not [false, false] = true := sorry
-example : allTrue Nat.even [0, 2, 4, 5] = false := sorry
-example : allTrue Nat.even [] = true := sorry
+example : allTrue Nat.odd [1, 3, 5, 7, 9] = true := by rfl
+example : allTrue not [false, false] = true := by rfl
+example : allTrue Nat.even [0, 2, 4, 5] = false := by rfl
+example : allTrue Nat.even [] = true := by rfl
 
 --  The second checks whether it returns `true` for at least one element.
 
-def anyTrue {α : Type} (test : α → Bool) (l : List α) : Bool := sorry
+def anyTrue {α : Type} (test : α → Bool) (l : List α) : Bool :=
+  match l with
+  | [] => false
+  | x::xs => test x || anyTrue test xs
 
-example : anyTrue Nat.even [1, 3, 4, 7] = true := sorry
-example : anyTrue Nat.odd [0, 2, 4, 6] = false := sorry
-example : anyTrue not [true, true, false] = true := sorry
-example : anyTrue Nat.even [] = false := sorry
+example : anyTrue Nat.even [1, 3, 4, 7] = true := by rfl
+example : anyTrue Nat.odd [0, 2, 4, 6] = false := by rfl
+example : anyTrue not [true, true, false] = true := by rfl
+example : anyTrue Nat.even [] = false := by rfl
 
 --  Next, define a *nonrecursive* version of `anyTrue` — call it `anyTrue'`
 --  — using `allTrue` and `not`.
 
-def anyTrue' {α : Type} (test : α → Bool) (l : List α) : Bool := sorry
+def anyTrue' {α : Type} (test : α → Bool) (l : List α) : Bool :=
+  not (allTrue (fun x => not (test x)) l)
 
 --  Finally, prove a theorem `anyTrue_eq_anyTrue` stating that `anyTrue'`
 --  and `anyTrue` have the same behavior.
 
 theorem anyTrue_eq_anyTrue (α : Type) (test : α → Bool) (l : List α) :
     anyTrue test l = anyTrue' test l := by
-  sorry
+  induction l generalizing test with
+  | nil => rfl
+  | cons _ _ ih =>
+    dsimp [anyTrue]
+    rw [ih]
+    dsimp [anyTrue', allTrue]
+    rw [Bool.not_and, Bool.not_not]
 
 -- Source revision: e8ae4e0, committed 2026-11-11 12:07 UTC
